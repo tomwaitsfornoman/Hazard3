@@ -135,7 +135,6 @@ always @ (*) begin: boundary_conditions
 	fifo_mem[FIFO_DEPTH] = mem_data;
 	fifo_predbranch[FIFO_DEPTH] = 2'b00;
 	fifo_err[FIFO_DEPTH] = 1'b0;
-	fifo_valid_hw[FIFO_DEPTH] = 2'b00;
 	for (i = 0; i < FIFO_DEPTH; i = i + 1) begin
 		fifo_valid[i] = |EXTENSION_C ? |fifo_valid_hw[i] : fifo_valid_hw[i][0];
 		// valid-to-right condition: i == 0 || fifo_valid[i - 1], but without
@@ -158,6 +157,10 @@ always @ (posedge clk or negedge rst_n) begin: fifo_update
 			fifo_err[i] <= 1'b0;
 			fifo_predbranch[i] <= 2'b00;
 		end
+		// This exists only for loop boundary conditions, but is tied off in
+		// this synchronous process to work around a Verilator scheduling
+		// issue (see issue #21)
+		fifo_valid_hw[FIFO_DEPTH] <= 2'b00;
 	end else begin
 		for (i = 0; i < FIFO_DEPTH; i = i + 1) begin
 			if (fifo_pop || (fifo_push && !fifo_valid[i])) begin
@@ -183,6 +186,7 @@ always @ (posedge clk or negedge rst_n) begin: fifo_update
 			fifo_predbranch[0] <= 2'b00;
 			fifo_valid_hw[0] <= jump_now ? 2'b00 : 2'b11;
 		end
+		fifo_valid_hw[FIFO_DEPTH] <= 2'b00;
 `ifdef HAZARD3_ASSERTIONS
 		// FIFO validity must be compact, so we can always consume from the end
 		if (!fifo_valid[0]) begin

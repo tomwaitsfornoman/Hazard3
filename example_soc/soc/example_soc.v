@@ -31,8 +31,8 @@ module example_soc #(
 	input  wire              uart_rx
 );
 
-localparam W_ADDR = 32;
-localparam W_DATA = 32;
+// localparam W_ADDR = 32;
+// localparam W_DATA = 32;
 
 // ----------------------------------------------------------------------------
 // Processor debug
@@ -501,7 +501,8 @@ apb_splitter #(
 // zero-initialised so don't leave the little guy hanging too long)
 
 ahb_sync_sram #(
-	.DEPTH (SRAM_DEPTH)
+	.DEPTH (SRAM_DEPTH),
+	.PRELOAD_FILE ("/home/per/hazard3/Hazard3/test/sim/hellow/tmp/hellow_le.hex")
 ) sram0 (
 	.clk               (clk),
 	.rst_n             (rst_n),

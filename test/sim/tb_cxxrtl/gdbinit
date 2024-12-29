@@ -1,5 +1,23 @@
-set arch riscv:rv32
+# set arch riscv:rv32
+# set confirm off
+# set disassemble-next-line on
+# targ rem localhost:3333
+# monitor reset halt
+
+# Remaining commands are typed into the gdb prompt. This one tells gdb to shut up:
 set confirm off
-set disassemble-next-line on
-targ rem localhost:3333
-monitor reset halt
+# Connect to openocd on its default port:
+target extended-remote localhost:3333
+# Load hello world, and check that it loaded correctly
+file ../hellow/tmp/hellow.elf
+load
+compare-sections
+# The processor will quit the simulation when after returning from main(), by
+# writing to a magic MMIO register. openocd will be quite unhappy that the
+# other end of its socket disappeared, so to avoid the resulting error
+# messages, add a breakpoint before _exit.
+break _exit
+run
+# Should break at _exit. Check the terminal with the simulator, you should see
+# the hello world message. The exit code is in register a0, it should be 123:
+info reg a0

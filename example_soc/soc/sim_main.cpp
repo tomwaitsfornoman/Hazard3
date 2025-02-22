@@ -12,7 +12,9 @@
 #include <verilated.h>
 
 // Include model header, generated from Verilating "top.v"
-#include "Vtop.h"
+#include "Vexample_soc.h"
+
+#include <verilated_vcd_c.h>
 
 // Legacy function required only so linking works on Cygwin and MSVC++
 double sc_time_stamp() { return 0; }
@@ -52,19 +54,23 @@ int main(int argc, char** argv) {
     // Construct the Verilated model, from Vtop.h generated from Verilating "top.v".
     // Using unique_ptr is similar to "Vtop* top = new Vtop" then deleting at end.
     // "TOP" will be the hierarchical name of the module.
-    const std::unique_ptr<Vtop> top{new Vtop{contextp.get(), "TOP"}};
+    const std::unique_ptr<Vexample_soc> top{new Vexample_soc{contextp.get(), "TOP"}};
+
+    VerilatedVcdC *m_trace = new VerilatedVcdC;
+    top->trace(m_trace, 99);
+    m_trace->open("waveform.vcd");
 
     // Set Vtop's input signals
-    top->reset_l = !0;
+    top->rst_n = !0;
     top->clk = 0;
-    top->in_small = 1;
-    top->in_quad = 0x1234;
-    top->in_wide[0] = 0x11111111;
-    top->in_wide[1] = 0x22222222;
-    top->in_wide[2] = 0x3;
+    // top->in_small = 1;
+    // top->in_quad = 0x1234;
+    // top->in_wide[0] = 0x11111111;
+    // top->in_wide[1] = 0x22222222;
+    // top->in_wide[2] = 0x3;
 
     // Simulate until $finish
-    while (!contextp->gotFinish()) {
+    while (!contextp->gotFinish() && contextp->time() < 1'000'000) {
         // Historical note, before Verilator 4.200 Verilated::gotFinish()
         // was used above in place of contextp->gotFinish().
         // Most of the contextp-> calls can use Verilated:: calls instead;
@@ -87,12 +93,12 @@ int main(int argc, char** argv) {
         // reset is not sampled there.
         if (!top->clk) {
             if (contextp->time() > 1 && contextp->time() < 10) {
-                top->reset_l = !1;  // Assert reset
+                top->rst_n = !1;  // Assert reset
             } else {
-                top->reset_l = !0;  // Deassert reset
+                top->rst_n = !0;  // Deassert reset
             }
             // Assign some other inputs
-            top->in_quad += 0x12;
+            // top->in_quad += 0x12;
         }
 
         // Evaluate model
@@ -101,15 +107,19 @@ int main(int argc, char** argv) {
         // eval_end_step() on each. See the manual.)
         top->eval();
 
+	m_trace->dump(contextp->time());
+
         // Read outputs
-        VL_PRINTF("[%" PRId64 "] clk=%x rstl=%x iquad=%" PRIx64 " -> oquad=%" PRIx64
-                  " owide=%x_%08x_%08x\n",
-                  contextp->time(), top->clk, top->reset_l, top->in_quad, top->out_quad,
-                  top->out_wide[2], top->out_wide[1], top->out_wide[0]);
+        // VL_PRINTF("[%" PRId64 "] clk=%x rstl=%x iquad=%" PRIx64 " -> oquad=%" PRIx64
+        //           " owide=%x_%08x_%08x\n",
+        //           contextp->time(), top->clk, top->reset_l, top->in_quad, top->out_quad,
+        //           top->out_wide[2], top->out_wide[1], top->out_wide[0]);
     }
 
     // Final model cleanup
     top->final();
+
+    m_trace->close();
 
     // Coverage analysis (calling write only after the test is known to pass)
 #if VM_COVERAGE

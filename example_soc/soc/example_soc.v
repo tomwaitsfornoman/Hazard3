@@ -502,7 +502,7 @@ apb_splitter #(
 
 ahb_sync_sram #(
 	.DEPTH (SRAM_DEPTH),
-	.PRELOAD_FILE ("/home/per/hazard3/Hazard3/test/sim/hellow/tmp/hellow_le.hex")
+	.PRELOAD_FILE ("/home/per/hazard3/myHazard3/test/sim/hellow/tmp/hellow.hex")
 ) sram0 (
 	.clk               (clk),
 	.rst_n             (rst_n),
